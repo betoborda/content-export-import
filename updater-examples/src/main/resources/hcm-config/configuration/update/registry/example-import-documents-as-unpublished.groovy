@@ -28,6 +28,9 @@ import org.onehippo.forge.content.pojo.model.*
 import org.onehippo.forge.content.exim.core.*
 import org.onehippo.forge.content.exim.core.impl.*
 import org.onehippo.forge.content.exim.core.util.*
+import org.onehippo.repository.documentworkflow.DocumentWorkflow
+import com.google.common.base.Joiner
+
 
 class ImportingDocumentVariantInFileUpdateVisitor extends BaseNodeUpdateVisitor {
 
@@ -42,8 +45,9 @@ class ImportingDocumentVariantInFileUpdateVisitor extends BaseNodeUpdateVisitor 
     }
 
     def sourceBaseFolderPath = StrSubstitutor.replaceSystemProperties(parametersMap.get("sourceBaseFolderPath"))
+    log.info sourceBaseFolderPath
     sourceBaseFolder = VFS.getManager().resolveFile(sourceBaseFolderPath)
-
+    
     documentManager = new WorkflowDocumentManagerImpl(session)
     importTask = new WorkflowDocumentVariantImportTask(documentManager)
     importTask.setLogger(log)
@@ -92,10 +96,24 @@ class ImportingDocumentVariantInFileUpdateVisitor extends BaseNodeUpdateVisitor 
         // find localized document name if jcr:localizedName meta property exists in the ContentNode object.
         localizedName = contentNode.getProperty("jcr:localizedName").getValue()
 
+        log.debug "document location '${documentLocation}'."
+        log.debug "hints before importing ${Joiner.on(",").withKeyValueSeparator("=").join(documentManager.getDocumentWorkflow(documentManager.getSession().getNode(documentLocation)).hints())}"   
+        log.debug "..."
+
         // create or update document at documentLocation from contentNode with localized name.
         updatedDocumentLocation =
             importTask.createOrUpdateDocumentFromVariantContentNode(contentNode, primaryTypeName, documentLocation, locale, localizedName)
 
+        log.debug "document location returned'${updatedDocumentLocation}'."
+        log.debug "..."
+
+        def documentHandleNode = documentManager.session.getNode(documentLocation);
+        def documentWorkflow = documentManager.getDocumentWorkflow(documentHandleNode);
+
+        log.debug "hints after importing ${Joiner.on(",").withKeyValueSeparator("=").join(documentManager.getDocumentWorkflow(documentManager.getSession().getNode(documentLocation)).hints())}"   
+        
+        documentWorkflow.requestPublication();
+        
         // By default, the created or updated document is left as preview status.
         // Optionally, if you want, you can publish the document again right away here by uncommenting the following lines.
         //documentManager.depublishDocument(updatedDocumentLocation)

@@ -63,7 +63,7 @@
     <!--***START temporary override of versions*** -->
     <!-- ***END temporary override of versions*** -->
 
-    <content-exim.version>${project.version}</content-exim.version>
+    <content-exim.version>4.0.1</content-exim.version>
 
     <essentials.version>14.0.0</essentials.version>
     <jsp-api.version>2.2</jsp-api.version>
